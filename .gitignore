@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+fix.patch
+fix.patch.meta
+*.rej
+redaction_log.txt
+config.sh
+.replay-pending

@@ -1,0 +1,12 @@
+# Copy this to config.sh (gitignored -- local/per-project, not versioned)
+# and edit for the project you're currently working on.
+SOURCE_DIR="/path/to/real/project"
+DEST_DIR="/path/to/sanitized/workspace"
+BASELINE_TAG="baseline"
+BRANCH="master"
+# Comma-separated directory-name / glob patterns to skip when scanning for
+# secrets (sanitize.py, rescan.py, verify.sh's own scan). Matched against both
+# the bare directory name and its path relative to the scanned root.
+# Files are still copied/exported as normal -- this only exempts them from
+# the redaction search, e.g. noisy vendored libs full of the word "password".
+EXCLUDE_DIRS=""
