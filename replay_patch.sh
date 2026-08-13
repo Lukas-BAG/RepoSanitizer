@@ -106,13 +106,19 @@ check_redaction_residue() {
 
 commit_pending_sha() {
   local sha="$1"
+  git -C "$REPO" add -A
+  if git -C "$REPO" diff --cached --quiet; then
+    git -C "$DEST_DIR" tag -f last-applied "$sha" >/dev/null
+    echo "No changes remain after resolving $sha -- treating as already satisfied."
+    echo "Advanced 'last-applied' in $DEST_DIR to $sha without creating a commit."
+    return 0
+  fi
   local author authordate message
   {
     IFS= read -r author
     IFS= read -r authordate
     message="$(cat)"
   } < <(commit_meta "$sha")
-  git -C "$REPO" add -A
   git -C "$REPO" commit -q --author="$author" --date="$authordate" -m "$message"
   git -C "$DEST_DIR" tag -f last-applied "$sha" >/dev/null
   echo "Committed in $REPO and advanced 'last-applied' in $DEST_DIR to $sha."
