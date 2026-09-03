@@ -191,6 +191,37 @@ for sha in $COMMITS; do
   echo
   echo "=== $sha: $subject ==="
 
+  PARENTS=($(git -C "$DEST_DIR" rev-list --parents -n 1 "$sha"))
+  if [ "${#PARENTS[@]}" -gt 2 ]; then
+    # Merge commit. `git format-patch -1` doesn't generate a patch for a
+    # merge commit -- it silently substitutes the nearest non-merge ancestor
+    # on the first-parent chain instead, with no diff-empty/error signal.
+    # That ancestor was already replayed individually by an earlier
+    # iteration of this loop, so applying it again would re-apply
+    # already-committed content into $REPO (see
+    # tickets/033-merge-commit-replay-reapplies-wrong-patch.md). Use the
+    # combined diff instead: it's empty exactly when this merge added
+    # nothing beyond what its parents already contributed.
+    COMBINED_DIFF="$(git -C "$DEST_DIR" diff-tree --cc --no-commit-id -p "$sha")"
+    if [ -z "$COMBINED_DIFF" ]; then
+      git -C "$DEST_DIR" tag -f last-applied "$sha" >/dev/null
+      echo "Clean merge, nothing beyond its parents -- advanced 'last-applied' in $DEST_DIR to $sha without touching $REPO."
+      continue
+    fi
+    echo "This merge carries hand-resolution content beyond its parents (combined diff below) -- it can't be replayed as an ordinary patch."
+    echo "Apply the equivalent change in $REPO by hand, 'git add' the result, then run:"
+    echo "  $0 --continue"
+    echo "Or discard this commit's attempt entirely:"
+    echo "  $0 --abort"
+    echo
+    echo "$COMBINED_DIFF"
+    {
+      echo "sha=$sha"
+      echo "repo=$REPO"
+    } > "$PENDING_FILE"
+    exit 1
+  fi
+
   PATCH_FILE="$(mktemp)"
   git -C "$DEST_DIR" format-patch -1 "$sha" --stdout > "$PATCH_FILE"
 
