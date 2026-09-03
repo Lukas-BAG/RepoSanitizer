@@ -180,7 +180,7 @@ else
   FROM_REF="$BASELINE_TAG"
 fi
 
-COMMITS=$(git -C "$DEST_DIR" rev-list --reverse "$FROM_REF..HEAD")
+COMMITS=$(git -C "$DEST_DIR" rev-list --reverse --topo-order "$FROM_REF..HEAD")
 if [ -z "$COMMITS" ]; then
   echo "Nothing to replay -- $DEST_DIR's HEAD matches $FROM_REF."
   exit 0
